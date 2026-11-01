@@ -1,62 +1,74 @@
-# Comment Intelligence
+# VazhehKav | واژه‌کاو
 
-**Comment Intelligence** is a Persian-language comment analysis project that combines machine learning with a Django web application.
+**VazhehKav** is a Persian-language comment intelligence platform that combines Natural Language Processing (NLP), machine learning, and Django to analyze user-generated comments.
 
-It analyzes comments along two dimensions: how likely a comment is to be recommended and how likely it is to contain offensive content. The application also provides user accounts, comment storage, an API endpoint, and a dashboard for exploring monthly comment statistics.
+The platform evaluates comments from two perspectives:
 
-> **Project status:** Initial version. Model evaluation, security hardening, testing, and deployment preparation are ongoing improvements.
+- **Recommendation Analysis:** Estimates how likely a comment is to recommend a product or service.
+- **Offensive Content Detection:** Estimates how likely a comment is to contain offensive language.
+
+Built with Python and Django, VazhehKav also provides user accounts, an API for submitting comments, persistent storage, and an analytics dashboard for exploring comment statistics.
+
+> **Project Status:** Initial implementation. Model evaluation, security improvements, automated testing, and deployment preparation are ongoing.
 
 ## Features
 
-### Machine Learning and NLP
-- Analyzes Persian comments using machine learning models.
-- Predicts the likelihood that a comment will be recommended.
-- Predicts the likelihood that a comment contains offensive content.
-- Uses Persian text preprocessing with Hazm.
-- Loads trained models through saved Scikit-learn pipelines.
+### Machine Learning & NLP
+
+- Analyzes Persian-language comments using trained machine learning models.
+- Predicts recommendation likelihood.
+- Detects potentially offensive content.
+- Applies Persian text preprocessing using [Hazm](https://github.com/roshan-research/hazm).
+- Loads trained models through serialized Scikit-learn pipelines.
 
 ### Web Application
+
 - User registration and authentication.
 - Custom user model with phone-number-based accounts.
-- API key generation for authenticated API usage.
-- Comment storage with analysis scores and optional tags.
-- Dashboard for viewing comment statistics.
-- Monthly statistics for recommended, not recommended, offensive, and non-offensive comments.
+- API key generation for authenticated API access.
+- Comment storage with prediction scores and optional tags.
+- Dashboard for exploring comment statistics.
+- Monthly statistics covering:
+  - Recommended comments
+  - Not-recommended comments
+  - Offensive comments
+  - Non-offensive comments
 
-### API
-- Accepts comments for analysis and storage.
+### REST API
+
+- Accepts Persian comments for analysis and storage.
 - Supports optional tags and dates.
-- Associates submitted comments with the corresponding user account through an API key.
+- Associates submitted comments with user accounts through API keys.
 
 ## How It Works
 
-The analysis pipeline follows these general steps:
+The platform processes comments through the following workflow:
 
-1. **Input:** A Persian comment is submitted for analysis.
+1. **Input:** A user submits a Persian-language comment.
 2. **Preprocessing:** The text is normalized and processed using Hazm and other text-processing utilities.
 3. **Prediction:** Two trained machine learning pipelines estimate the recommendation and offensiveness probabilities.
-4. **Storage:** Through the web application, the comment and its associated scores can be saved to the database.
-5. **Dashboard:** Stored comments can be explored through monthly statistics.
+4. **Storage:** The comment and its associated prediction scores can be stored in the database.
+5. **Analytics:** Stored comments are aggregated and presented through the dashboard.
 
 ## Technology Stack
 
 | Category | Technologies |
 |---|---|
-| Language | Python |
+| Programming Language | Python |
 | Data Processing | Pandas, NumPy |
 | Machine Learning | Scikit-learn |
 | Persian NLP | Hazm |
 | Text Processing | Emoji |
-| Visualization | Matplotlib |
+| Data Visualization | Matplotlib |
 | Web Framework | Django |
-| API | Django REST Framework |
+| REST API | Django REST Framework |
 | Database | SQLite |
 | Configuration | python-dotenv |
 
 ## Project Structure
 
 ```text
-comment-intelligence/
+vazheh-kav/
 ├── data/
 ├── notebooks/
 ├── web/
@@ -71,13 +83,21 @@ comment-intelligence/
 └── requirements.txt
 ```
 
+- `data/`: Dataset-related files.
+- `notebooks/`: Jupyter notebooks for data exploration, preprocessing, and model development.
+- `web/accounts/`: User account and authentication functionality.
+- `web/config/`: Django project configuration.
+- `web/core/`: Main application functionality.
+- `web/services/`: Model loading and prediction services.
+- `web/services/models/`: Saved machine learning pipelines.
+
 ## API Usage
 
 ### Analyze a Comment
 
 **Endpoint:** `POST /analyze_comment/`
 
-The endpoint accepts the following fields:
+The API accepts the following fields:
 
 | Field | Required | Description |
 |---|---|---|
@@ -86,32 +106,33 @@ The endpoint accepts the following fields:
 | `tag` | No | Optional tag for categorizing the comment |
 | `date` | No | Optional date associated with the comment |
 
-Example request body:
+**Example Request Body:**
 
 ```json
 {
-  "api_key": "YOUR_API_KEY",
-  "text": "کیفیت این محصول واقعاً عالی بود.",
-  "tag": "product-feedback",
-  "date": "2026-10-27"
+    "api_key": "YOUR_API_KEY",
+    "text": "کیفیت این محصول واقعاً عالی بود.",
+    "tag": "product-feedback",
+    "date": "2026-10-27"
 }
 ```
 
 A successful request returns a confirmation message indicating that the comment has been saved.
 
-**Note:** The current endpoint does not return the prediction scores directly in its response. The scores are stored with the comment.
+> **Note:** The current API endpoint does not return prediction scores directly in its response. Recommendation and offensiveness scores are stored alongside the submitted comment and can be explored through the dashboard.
 
-## Limitations
+## Limitations & Future Improvements
 
-- **Persian only:** The project is designed for Persian-language comments and is not a bilingual system.
-- **Model evaluation:** Comprehensive evaluation metrics and a reproducible evaluation methodology are not yet documented.
-- **Prediction reliability:** Model outputs are estimates and should not be treated as perfectly reliable classifications.
-- **Input validation:** Error handling and validation need further improvement.
-- **Security:** The current development configuration requires security hardening before public deployment.
-- **Testing and documentation:** Automated test coverage and API documentation can be expanded.
+VazhehKav is an initial implementation and has several areas that require further development:
 
-The project is an initial implementation intended to demonstrate the integration of Persian NLP, machine learning, and a Django-based web application. It is not currently presented as production-ready software.
+- **Language Support:** Currently designed for Persian-language comments only.
+- **Model Evaluation:** Comprehensive evaluation metrics and a reproducible evaluation methodology need to be documented.
+- **Prediction Reliability:** Model predictions are estimates and should not be considered perfectly reliable classifications.
+- **Input Validation:** API validation and error handling require further improvement.
+- **Security:** The development configuration needs additional security hardening before public deployment.
+- **Testing:** Automated test coverage needs to be expanded.
+- **Documentation:** API documentation and setup instructions can be improved.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the [MIT License](LICENSE).
