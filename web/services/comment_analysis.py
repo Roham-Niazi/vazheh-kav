@@ -37,7 +37,7 @@ class CommentAnalyzer:
 		for char in chars: text=text.replace(char, " ")
 		return text
 
-	def preprocess(self, text):
+	def preprocess_offensive(self, text):
 		if not isinstance(text, str): return np.nan
 
 		text=text.lower()
@@ -64,13 +64,29 @@ class CommentAnalyzer:
 
 		return " ".join(tokens)
 
+	def preprocess_recommendation(self, text):
+		if not isinstance(text, str):
+			return None
+
+		text=self.remove_chars(text.lower(), string.punctuation+"؟،")
+		text=self.normalizer.normalize(text).replace("آ", "ا")
+		# Keep the half-space so negated verbs remain intact during tokenization.
+		text=self.remove_chars(text, "۰۱۲۳۴۵۶۷۸۹")
+		tokens=[
+			token if token in self.lemmatizer.verbs
+			else self.lemmatizer.lemmatize(token).split("#")[0]
+			for token in self.word_tokenizer.tokenize(text)
+		]
+		return " ".join(tokens) if tokens else None
+
 
 	def predict(self, comment):
 		positive_idx = list(self.offensive_detection_pipeline.classes_).index(1)
 
-		comment=self.preprocess(comment)
-		offensive_result=self.offensive_detection_pipeline.predict_proba([comment])[0, positive_idx]
-		recommendation_result=self.recommendation_detection_pipeline.predict_proba([comment])[0, 1]
+		offensive_comment=self.preprocess_offensive(comment)
+		recommendation_comment=self.preprocess_recommendation(comment)
+		offensive_result=self.offensive_detection_pipeline.predict_proba([offensive_comment])[0, positive_idx]
+		recommendation_result=self.recommendation_detection_pipeline.predict_proba([recommendation_comment])[0, 1]
 
 		return {
 			"recommendation_percent": recommendation_result,
