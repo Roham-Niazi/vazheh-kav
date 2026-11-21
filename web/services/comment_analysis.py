@@ -1,9 +1,17 @@
 import joblib
 import hazm
 import emoji
-import numpy as np
 import string
 from pathlib import Path
+
+
+def emoji_token(value):
+    # Letters-only encoding preserves full Unicode emoji sequences through cleanup.
+    encoded = [
+        "".join(chr(ord("a") + int(digit, 16)) for digit in format(ord(char), "x"))
+        for char in value
+    ]
+    return "emojitoken" + "z".join(encoded)
 
 
 class CommentAnalyzer:
@@ -11,12 +19,6 @@ class CommentAnalyzer:
 		self.normalizer=hazm.Normalizer()
 		self.word_tokenizer=hazm.WordTokenizer()
 		self.lemmatizer=hazm.Lemmatizer()
-
-		self.stopwords=hazm.utils.stopwords_list()
-		self.stopwords=list(map(self.clean_stopword, self.stopwords))
-
-
-		for word in ["عالی", "خوب", "خوبی", "بی"]: self.stopwords.remove(word)
 
 		BASE_DIR = Path(__file__).resolve().parent
 
@@ -29,40 +31,35 @@ class CommentAnalyzer:
 		)
 
 
-	def clean_stopword(self, stopword):
-		return stopword.replace("آ", "ا")
-
-
 	def remove_chars(self, text, chars):
 		for char in chars: text=text.replace(char, " ")
 		return text
 
 	def preprocess_offensive(self, text):
-		if not isinstance(text, str): return np.nan
+		if not isinstance(text, str):
+			return None
+		seen_emoji = set()
+		protected_tokens = set()
 
-		text=text.lower()
-		text=self.remove_chars(text, string.punctuation+"؟،")
+		def replace_emoji(value, data):
+			if value in seen_emoji:
+				return " "
+			seen_emoji.add(value)
+			token = emoji_token(value)
+			protected_tokens.add(token)
+			return " " + token + " "
 
-		text=emoji.replace_emoji(text, replace=" ")
-
-		normalized_txt=self.normalizer.normalize(text).replace("آ", "ا")
-		normalized_txt=self.remove_chars(normalized_txt, "۰۱۲۳۴۵۶۷۸۹\u200c")
-		
-		tokens=self.word_tokenizer.tokenize(normalized_txt)
-
-		tokens=list(map(
-			lambda token: self.lemmatizer.lemmatize(token).split("#")[0],
-			tokens
-		))
-
-		tokens=list(filter(
-			lambda token: token not in self.stopwords,
-			tokens
-		))
-
-		if len(tokens)==0: return np.nan
-
-		return " ".join(tokens)
+		# Keep the first occurrence of each exact emoji sequence per comment.
+		text = emoji.replace_emoji(text.lower(), replace=replace_emoji)
+		text = self.remove_chars(text, string.punctuation + '؟،')
+		text = self.normalizer.normalize(text).replace('آ', 'ا')
+		text = self.remove_chars(text, '۰۱۲۳۴۵۶۷۸۹')
+		tokens = [
+			token if token in protected_tokens or token in self.lemmatizer.verbs
+			else self.lemmatizer.lemmatize(token).split("#")[0]
+			for token in self.word_tokenizer.tokenize(text)
+		]
+		return " ".join(tokens) if tokens else None
 
 	def preprocess_recommendation(self, text):
 		if not isinstance(text, str):
